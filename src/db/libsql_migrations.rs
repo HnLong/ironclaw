@@ -574,21 +574,20 @@ INSERT OR IGNORE INTO leak_detection_patterns (id, name, pattern, severity, acti
 ///
 /// Each entry is `(version, name, sql)`. Migrations are idempotent: the
 /// `_migrations` table tracks which versions have been applied.
-pub const INCREMENTAL_MIGRATIONS: &[(i64, &str, &str)] = &[
-    (
-        9,
-        "flexible_embedding_dimension",
-        // Rebuild memory_chunks to remove the fixed F32_BLOB(1536) type
-        // constraint so any embedding dimension works. Existing embeddings
-        // are preserved; users only need to re-embed if they change models.
-        //
-        // The vector index (libsql_vector_idx) requires a fixed-dimension
-        // F32_BLOB(N), so we drop it entirely. Vector search falls back to
-        // brute-force cosine distance which is fast enough for personal
-        // assistant workspaces. This matches PostgreSQL after its V9 migration.
-        //
-        // SQLite cannot ALTER COLUMN types, so we recreate the table.
-        r#"
+pub const INCREMENTAL_MIGRATIONS: &[(i64, &str, &str)] = &[(
+    9,
+    "flexible_embedding_dimension",
+    // Rebuild memory_chunks to remove the fixed F32_BLOB(1536) type
+    // constraint so any embedding dimension works. Existing embeddings
+    // are preserved; users only need to re-embed if they change models.
+    //
+    // The vector index (libsql_vector_idx) requires a fixed-dimension
+    // F32_BLOB(N), so we drop it entirely. Vector search falls back to
+    // brute-force cosine distance which is fast enough for personal
+    // assistant workspaces. This matches PostgreSQL after its V9 migration.
+    //
+    // SQLite cannot ALTER COLUMN types, so we recreate the table.
+    r#"
 -- Drop vector index (requires fixed F32_BLOB(N), incompatible with flexible dimensions)
 DROP INDEX IF EXISTS idx_memory_chunks_embedding;
 
@@ -636,8 +635,7 @@ CREATE TRIGGER IF NOT EXISTS memory_chunks_fts_update AFTER UPDATE ON memory_chu
     INSERT INTO memory_chunks_fts(rowid, content) VALUES (new._rowid, new.content);
 END;
 "#,
-    ),
-];
+)];
 
 /// Run incremental migrations that haven't been applied yet.
 ///
@@ -674,9 +672,7 @@ pub async fn run_incremental(conn: &libsql::Connection) -> Result<(), crate::err
         })?;
 
         tx.execute_batch(sql).await.map_err(|e| {
-            DatabaseError::Migration(format!(
-                "libSQL migration V{version} ({name}) failed: {e}"
-            ))
+            DatabaseError::Migration(format!("libSQL migration V{version} ({name}) failed: {e}"))
         })?;
 
         // Record as applied (inside the same transaction)

@@ -579,12 +579,12 @@ impl WorkspaceStore for LibSqlBackend {
             {
                 Ok(mut rows) => {
                     let mut results = Vec::new();
-                    while let Some(row) = rows
-                        .next()
-                        .await
-                        .map_err(|e| WorkspaceError::SearchFailed {
-                            reason: format!("Vector row fetch failed: {}", e),
-                        })?
+                    while let Some(row) =
+                        rows.next()
+                            .await
+                            .map_err(|e| WorkspaceError::SearchFailed {
+                                reason: format!("Vector row fetch failed: {}", e),
+                            })?
                     {
                         results.push(RankedResult {
                             chunk_id: get_text(&row, 0).parse().unwrap_or_default(),
